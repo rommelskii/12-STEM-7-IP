@@ -1,20 +1,137 @@
 #include <LiquidCrystal_I2C.h>
 #include <dht.h>
-LiquidCrystal_I2C lcd(0x27,16,2);  // set the LCD address to 0x3F for a 16 chars and 2 line display
+LiquidCrystal_I2C lcd(0x27,16,2);  
 dht DHT;
+
+void homeMenu(int x) {
+  switch (x) {
+    case 1: 
+      lcd.setCursor(0,0);
+      lcd.print("[Temp]");
+      lcd.setCursor(7,0);
+      lcd.print("LED");
+      lcd.setCursor(1,1);
+      lcd.print("Sanitize");
+      break;  
+    case 2: 
+      lcd.setCursor(1 ,0);
+      lcd.print("Temp");
+      lcd.setCursor(6,0);
+      lcd.print("[LED]");
+      lcd.setCursor(1 ,1);
+      lcd.print("Sanitize");
+      break;
+    case 3: 
+      lcd.setCursor(1,0);
+      lcd.print("Temp");
+      lcd.setCursor(7,0);
+      lcd.print("LED");
+      lcd.setCursor(0,1);
+      lcd.print("[Sanitize]");
+      break;  
+  }
+}
+
+void tempMenu(int temp) {
+      lcd.setCursor(0,0);
+      lcd.print("Desk Temp:");
+      lcd.setCursor(11,0);
+      lcd.print(temp);
+      lcd.setCursor(9, 1);
+      lcd.print("[Back]");
+      return;      
+  }
+
+void ledMenu (int red, int blue, int green, int a) {
+  switch (a) {
+    case 1: 
+      lcd.setCursor(0,0); 
+      lcd.print("[R]");
+      lcd.setCursor(5,0); 
+      lcd.print("G");
+      lcd.setCursor(10,0); 
+      lcd.print("B");
+      lcd.setCursor(0,1);
+      lcd.print(red);
+      lcd.setCursor(5,1);
+      lcd.print(green);
+      lcd.setCursor(10,1);
+      lcd.print(blue);
+      break;
+    case 2:
+      lcd.setCursor(0,0); 
+      lcd.print("R");
+      lcd.setCursor(5,0); 
+      lcd.print("[G]");
+      lcd.setCursor(10,0); 
+      lcd.print("B");
+      lcd.setCursor(0,1);
+      lcd.print(red);
+      lcd.setCursor(5,1);
+      lcd.print(green);
+      lcd.setCursor(10,1);
+      lcd.print(blue);
+      break;
+    case 3:
+      lcd.setCursor(0,0); 
+      lcd.print("R");
+      lcd.setCursor(5,0); 
+      lcd.print("G");
+      lcd.setCursor(10,0); 
+      lcd.print("[B]");
+      lcd.setCursor(0,1);
+      lcd.print(red);
+      lcd.setCursor(5,1);
+      lcd.print(green);
+      lcd.setCursor(10,1);
+      lcd.print(blue);
+      break;
+    case 4: 
+      lcd.setCursor(0,0);
+      lcd.print("[Back]");
+      break;      
+  }
+}
+void ledRedAdjust(int red, int green, int blue, int c) {
+  switch (c) {
+    case 2:
+      lcd.setCursor(0,0); 
+      lcd.print("R");
+      lcd.setCursor(5,0); 
+      lcd.print("G");
+      lcd.setCursor(10,0); 
+      lcd.print("B");
+      lcd.setCursor(0,1);
+      lcd.print("[");
+      lcd.setCursor(1,1);
+      lcd.print(red);
+      lcd.setCursor(4,1);
+      lcd.print("]");
+      lcd.setCursor(6,1);
+      lcd.print(green);
+      lcd.setCursor(11,1);
+      lcd.print(blue);
+      break;
+      
+  }
+      return;
+}
+  
 
 
 void setup() {
   Serial.begin(9600);
-
-  pinMode(7, INPUT);
+  pinMode(1, INPUT);
+  pinMode(2, INPUT);
+  pinMode(4, INPUT);
+  pinMode(6, INPUT);
   pinMode(8, INPUT);
   pinMode(9, INPUT);
-
+  pinMode(12, OUTPUT);
   pinMode(A0, OUTPUT);
   pinMode(A1, OUTPUT);
   pinMode(A2, OUTPUT);
-
+  digitalWrite(12, HIGH);
   lcd.init();
   lcd.clear();
   lcd.backlight();
@@ -22,108 +139,90 @@ void setup() {
 
 void loop() {
 //declarations 
-  int chk = DHT.read11(4);
-  int pinStatus7 = digitalRead(7);
-  int pinStatus8 = digitalRead(8);
-  int btnClk = digitalRead(9); 
+  int chk = DHT.read11(3);
+  int pinStatus1 = digitalRead(1);
+  int pinStatus2 = digitalRead(2); 
+  int left = digitalRead(5);
+  int right = digitalRead(4);
+  int btnClk = digitalRead(6); 
   static int deskTemp;
   static int counter = 1; 
-  static int ledCounter = 0;
-  static int clkCounter = 0; 
+  static int clkCounter = 0;
+  static int ledCounter = 1;
+  static int ledAdjCounter = 1;  
   static int redVal = 255;
   static int greenVal = 255;
   static int blueVal = 255; 
+  
 //rgb
   analogWrite(A0, redVal);
   analogWrite(A1, greenVal);
-  analogWrite(A2, blueVal); 
+  analogWrite(A2, blueVal);
+   
 //constraints
   counter = constrain(counter, 1, 3);
-//  clkCounter = constrain(clkCounter, 0, 1);
+  ledCounter = constrain(ledCounter, 1, 4);
+
 //sensor setup
   deskTemp = DHT.temperature;
 
+//diagnostics
+ /* Serial.println(counter);
+  Serial.println(btnClk);
+  Serial.println(clkCounter);
+  Serial.println(ledCounter);
+ */
+  Serial.println(clkCounter);
+
 //menu controls
-if (pinStatus8 == HIGH) {
+  if (right == HIGH && clkCounter == 0 && ledCounter > 0) {
     counter++;
     lcd.clear();
-  } else if (pinStatus7 == HIGH) {
+  } else if (left == HIGH && clkCounter == 0 && ledCounter > 0) {
     counter--;
-    Serial.println(counter);
-    lcd.clear();
-  }
-  Serial.println(clkCounter);
-  delay(150);
-  if (btnClk == HIGH) {
     lcd.clear();
   }
 
+  if (btnClk == 1) {
+    lcd.clear();
+  }
+  
+//home and temp transitions
+  if (btnClk == 1 && counter == 1 && clkCounter != 1) {
+    clkCounter = clkCounter + 1;
+  } else if (btnClk == 1 && counter == 1 && clkCounter == 1) {
+    clkCounter = clkCounter - 1; 
+  }
+  if (btnClk == 1 && counter == 2 && clkCounter != 2) {
+    clkCounter = clkCounter + 2;
+  }
+    else if (btnClk == 1 && counter == 2 && clkCounter == 2 && ledCounter == 4) {
+    clkCounter = clkCounter - 2;
+    ledCounter = ledCounter - 3;  
+  }
 
+//led menu transitions
+  if (counter == 2 && clkCounter == 2 && left == HIGH) {
+    ledCounter--;
+    lcd.clear(); 
+  } else if (counter == 2 && clkCounter == 2 && right == HIGH) {
+    ledCounter++;
+    lcd.clear();
+  }
 
-  Serial.println(btnClk);
+  
 //home menu
-  if (counter == 1 && btnClk != HIGH && clkCounter == 0 && ledCounter == 0) {
-    lcd.noBlink();
-    lcd.setCursor(0,0);
-    lcd.print("->Temp");
-    lcd.setCursor(8,0); 
-    lcd.print("LED");
-    lcd.setCursor(0,1); 
-    lcd.print("Sanitize");
-  } else if (counter == 2 && btnClk != HIGH && clkCounter == 0 && ledCounter == 0) {
-      lcd.noBlink();
-    lcd.setCursor(0,0);
-    lcd.print("Temp");
-    lcd.setCursor(8,0); 
-    lcd.print("->LED");
-    lcd.setCursor(0,1); 
-    lcd.print("Sanitize");
-  } else if(counter == 3 && btnClk != HIGH && clkCounter == 0 && ledCounter == 0) {
-    lcd.noBlink();
-    lcd.setCursor(0,0);
-    lcd.print("Temp");
-    lcd.setCursor(8,0); 
-    lcd.print("LED");
-    lcd.setCursor(0,1); 
-    lcd.print("->Sanitize");   
-  }
-//temp menu 
-  if (counter == 1 && btnClk == HIGH) {
-    clkCounter = clkCounter + 1; 
-  }
-  if (clkCounter == 1) {  
-    lcd.setCursor(0,0);
-    lcd.print("Desk Temp");
-    lcd.setCursor(10, 0);
-    lcd.print(deskTemp);
-    lcd.setCursor(12,0);
-    lcd.print("C");
-  } else if (clkCounter == 2) {
-    clkCounter = 0;
-  }
+if (clkCounter == 0) {
+homeMenu(counter);
+}
+//temp menu
+if (clkCounter == 1) {
+  tempMenu(deskTemp);
+}
+//led menu
+if (clkCounter == 2 && ledAdjCounter < 2) {
+  ledMenu(redVal, greenVal, blueVal, ledCounter);
+}
 
-//led menu 
-  if (counter == 2 && btnClk == HIGH) {
-    clkCounter = clkCounter + 3; 
-  }
-  if (clkCounter == 3) {  
-    lcd.setCursor(0,0);
-    lcd.print("R");
-    lcd.setCursor(5, 0);
-    lcd.print("G");
-    lcd.setCursor(10,0);
-    lcd.print("B");
-
-    lcd.setCursor(0,1);
-    lcd.print(redVal);
-    lcd.setCursor(5,1);
-    lcd.print(greenVal);
-    lcd.setCursor(10,1);
-    lcd.print(blueVal);
-  } else if (clkCounter == 6) {
-    clkCounter = 0;
-  }
-
- 
-
+delay(100);
 }
