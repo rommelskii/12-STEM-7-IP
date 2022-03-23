@@ -1,7 +1,23 @@
+#include <Key.h>
+#include <Keypad.h>
+
 #include <LiquidCrystal_I2C.h>
 #include <dht.h>
+
 LiquidCrystal_I2C lcd(0x27,16,2);  
 dht DHT;
+
+const byte ROWS = 1; 
+const byte COLS = 4; 
+
+char hexaKeys[ROWS] [COLS] = {
+  {'E', 'R', 'L'}
+};
+
+byte rowPins[ROWS] = {8}; 
+byte colPins[COLS] = {9, 10, 11};
+
+Keypad customKeypad = Keypad(makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 void homeMenu(int x) {
   switch (x) {
@@ -166,6 +182,7 @@ void setup() {
   pinMode(1, INPUT);
   pinMode(2, OUTPUT);
   pinMode(4, INPUT);
+  pinMode(5, OUTPUT);
   pinMode(6, INPUT);
   pinMode(8, OUTPUT);
   pinMode(9, INPUT);
@@ -184,7 +201,7 @@ void setup() {
 void loop() {
   
 //declarations 
-  int chk = DHT.read11(3);
+  int chk = DHT.read11(13);
   int pinStatus1 = digitalRead(1);
   int pinStatus2 = digitalRead(2); 
   int left = digitalRead(5);
@@ -193,6 +210,8 @@ void loop() {
   int down = digitalRead(1); 
   int btnClk = digitalRead(6); 
   int btnClk2 = digitalRead(6);
+  static int i;
+  static int j;
   static int deskTemp;
   static int counter = 1; 
   static int clkCounter = 0;
@@ -201,7 +220,8 @@ void loop() {
   static int ledBuffer = 0;   
   static int redVal = 128;
   static int greenVal = 127;
-  static int blueVal = 127; 
+  static int blueVal = 127;
+  char customKey = customKeypad.getKey();
   
 //rgb
   analogWrite(A0, redVal);
@@ -220,100 +240,109 @@ void loop() {
   deskTemp = DHT.temperature;
 
 //diagnostics 
-  Serial.print("Counter:");
-  Serial.print(counter);
-  Serial.println("");
-  Serial.print("btnClk:");
-  Serial.print(btnClk);
-  Serial.println("");
-  Serial.print("clkCounter:");
-  Serial.print(clkCounter);
-  Serial.println("");
-  Serial.print("ledCounter:");
-  Serial.print(ledCounter);
-  Serial.println("");
-  Serial.print("ledAdjCounter:");
-  Serial.print(ledAdjCounter);
-  Serial.println("");
-  Serial.print("redVal:");
-  Serial.print(redVal);  
-  Serial.println("");
-  Serial.println("");
+  Serial.println(j);
 
 //menu controls
-  if (right == HIGH && clkCounter == 0 && ledCounter > 0) {
+  if (customKey && clkCounter == 0 && ledCounter > 0) {
+    if (customKey == 'R') {
     counter++;
     lcd.clear();
     delay(100);
-  } else if (left == HIGH && clkCounter == 0 && ledCounter > 0) {
-    counter--;
-    lcd.clear();
-    delay(100);
+    } else if (customKey == 'L') {
+      counter--;
+      lcd.clear();
+      delay(100);
+    } 
   }
 
-  if (btnClk == 1) {
+  if (btnClk == 1 && i != 1) {
     lcd.clear();
     delay(100);
   } 
   
 //home and temp transitions
-  if (btnClk == 1 && counter == 1 && clkCounter != 1) {
+  if (customKey && counter == 1 && clkCounter != 1) {
+    if (customKey == 'E') {
     clkCounter = clkCounter + 1;
+    lcd.clear();
     delay(100);
-  } else if (btnClk == 1 && counter == 1 && clkCounter == 1) {
+    }
+  } else if (customKey && counter == 1 && clkCounter == 1) {
+    if (customKey == 'E') {
     clkCounter = clkCounter - 1; 
+    lcd.clear();
     delay(100);
+    }
   }
-  if (btnClk == 1 && counter == 2 && clkCounter != 2) {
+  if (customKey && counter == 2 && clkCounter != 2) {
+    if (customKey == 'E') {
     clkCounter = clkCounter + 2;
+    lcd.clear();
     delay(100);
+    }
   }
-    else if (btnClk == 1 && counter == 2 && clkCounter == 2 && ledCounter == 4) {
+    else if (customKey && counter == 2 && clkCounter == 2 && ledCounter == 4) {
+    if (customKey == 'E') {
     clkCounter = clkCounter - 2;
     ledCounter = ledCounter - 3;  
+    lcd.clear();
     delay(100);
+    }
   }
 
 //led menu transitions
-  if (counter == 2 && clkCounter == 2 && ledAdjCounter == 0 && left == HIGH) {
-    ledCounter--;
-    lcd.clear(); 
-    delay(100);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 0 && right == HIGH) {
-    ledCounter++;
-    lcd.clear();
-    delay(100);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 1 && left == HIGH) {
-    redVal = redVal - 1;
-    lcd.clear();
-    delay(2);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 1 && right == HIGH) {
-    redVal = redVal + 1;
-    lcd.clear();
-    delay(2);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 3 && left == HIGH) {
-    greenVal = greenVal - 1;
-    lcd.clear();
-    delay(2);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 3 && right == HIGH) {
-    greenVal = greenVal + 1;
-    lcd.clear();
-    delay(2);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 5 && left == HIGH) {
-    blueVal = blueVal - 1; 
-    delay(2);
-  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 5 && right == HIGH) {
-    blueVal = blueVal + 1;
-    delay(2);
-  }
+  if (counter == 2 && clkCounter == 2 && ledAdjCounter == 0 && customKey) {
+    if(customKey == 'L') {
+      ledCounter--;
+      lcd.clear(); 
+      delay(100);
+    } else if (customKey == 'R') {
+      ledCounter++;
+      lcd.clear();
+      delay(100);
+    }
+  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 1 && customKey) {
+      if (customKey == 'L') {
+        redVal = redVal - 1;
+        lcd.clear();
+        delay(2);
+      } else if (customKey == 'R') {
+        redVal = redVal + 1;
+        lcd.clear();
+        delay(2);
+      }
+  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 3 && customKey) {
+      if (customKey == 'L') {
+        greenVal = greenVal - 1;
+        lcd.clear();
+        delay(2);
+      } else if (customKey == 'R') {
+        greenVal = greenVal + 1;
+        lcd.clear();
+        delay(2);
+      }
+  } else if (counter == 2 && clkCounter == 2 && ledAdjCounter == 5 && customKey) {
+      if (customKey == 'L') {
+        blueVal = blueVal - 1; 
+        delay(2);
+      } else if (customKey == 'R') {
+        blueVal = blueVal + 1;
+        delay(2);
+      }
+  } 
 
 
 
   
 //home menu
-if (clkCounter == 0) {
+if (clkCounter == 0 && i == 0) {
 ledAdjCounter = 0;
 homeMenu(counter);
+} else if (i == 1) {
+    lcd.setCursor(0,0);
+    lcd.print("Sanitation is");
+    lcd.setCursor(0,1);
+    lcd.print("ongoing...");
 }
 //temp menu
 if (clkCounter == 1) {
@@ -328,15 +357,21 @@ if (clkCounter == 2 && ledAdjCounter == 0) {
   delay(100);
 }
 
-if (clkCounter == 2 && ledCounter == 1 && btnClk == HIGH) {
-  lcd.clear();
-  ledAdjCounter++;
-} else if (clkCounter == 2 && ledCounter == 2 && btnClk == HIGH) {
-  lcd.clear();
-  ledAdjCounter = ledAdjCounter + 3; 
-} else if (clkCounter == 2 && ledCounter == 3 && btnClk == HIGH) {
-  lcd.clear();
-  ledAdjCounter = ledAdjCounter + 5;
+if (clkCounter == 2 && ledCounter == 1 && customKey && i == 0) {
+  if (customKey == 'E') { 
+    lcd.clear();
+    ledAdjCounter++;
+  }
+} else if (clkCounter == 2 && ledCounter == 2 && customKey && i == 0) {
+    if (customKey == 'E') {
+      lcd.clear();
+      ledAdjCounter = ledAdjCounter + 3;
+    } 
+} else if (clkCounter == 2 && ledCounter == 3 && customKey && i == 0) {
+    if (customKey == 'E') {
+      lcd.clear();
+      ledAdjCounter = ledAdjCounter + 5;
+    }
 }
   else if (ledAdjCounter == 2) {
   lcd.clear();
@@ -347,5 +382,24 @@ if (clkCounter == 2 && ledCounter == 1 && btnClk == HIGH) {
 } else if (ledAdjCounter == 10) {
   lcd.clear();
   ledAdjCounter = 0;
+}
+
+if (customKey && counter == 3 && customKey == 'E') {
+  i = 1;
+}
+
+if (i == 1) {
+  while(j < 10) {
+    j = j + 1;
+    digitalWrite(5, HIGH);
+    delay(1000);
+    break;
+  }
+if (j == 10) {
+      digitalWrite(5, LOW);
+      j = 0;
+      i = 0;
+      lcd.clear();
+    }
 }
 }
