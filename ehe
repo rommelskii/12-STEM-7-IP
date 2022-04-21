@@ -1,0 +1,99 @@
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 16, 2); 
+
+
+void menu(bool sanitationState, byte timer) {
+  switch (sanitationState) {
+    case false:
+      lcd.setCursor(0,0);
+      lcd.print("UV: Off");
+      lcd.setCursor(9,0);
+      lcd.print("Last");
+      lcd.setCursor(0,1);
+      lcd.print("Time:");
+      break;
+    case true:
+      lcd.setCursor(0,0);
+      lcd.print("Sanitation ON");
+      lcd.setCursor(0, 1);
+      lcd.print("Don't open");
+      lcd.setCursor(10, 1);
+      lcd.print(timer);
+      break;
+
+  }
+}
+
+void setup() {
+  
+  Serial.begin(9600);
+
+  pinMode(6, OUTPUT);
+  pinMode(2, OUTPUT);
+  pinMode(7, INPUT);
+  pinMode(8, OUTPUT);
+  pinMode(9, OUTPUT);
+  pinMode(10, OUTPUT);
+  pinMode(11, OUTPUT);
+  pinMode(13, OUTPUT);
+
+  digitalWrite(2, HIGH);
+  digitalWrite(8, HIGH);
+  digitalWrite(10, LOW);
+  digitalWrite(11, HIGH);
+  digitalWrite(6, HIGH);
+  digitalWrite(13, HIGH);
+  lcd.init();
+  lcd.backlight();
+}
+
+void loop() {
+
+  byte btnPin = 7;
+  byte pwrPin = 8;
+
+  byte timer;
+
+  static bool sanitationState = false;
+
+  byte btnRead = digitalRead(7);
+
+  if (btnRead == HIGH) {
+    lcd.clear();
+    for(byte i; i <= 20; i++) {
+      sanitationState = true;
+      Serial.println(i);
+      menu(sanitationState, i);
+      delay(1000);
+      if (i == 0) {
+        digitalWrite(8, LOW);
+        digitalWrite(9, HIGH);
+        digitalWrite(10, LOW);
+        digitalWrite(11, LOW);
+      } 
+    
+      if (i == 10) {
+        digitalWrite(6, LOW);
+        digitalWrite(8, HIGH);
+        digitalWrite(9, LOW);
+        digitalWrite(10, HIGH);
+        digitalWrite(11, LOW);
+      }
+
+      if (i == 20) {
+        sanitationState = false;
+        digitalWrite(6, HIGH);
+        digitalWrite(8, HIGH);
+        digitalWrite(11, HIGH);
+        digitalWrite(10, LOW);
+        digitalWrite(9, LOW);
+        lcd.clear();
+      }
+    }
+  }
+
+  Serial.println(btnRead);
+  menu(sanitationState, timer);
+  delay(100);
+}
